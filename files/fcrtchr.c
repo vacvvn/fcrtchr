@@ -92,6 +92,35 @@ struct fcrt_priv_mem fcrt_mem;
 void * fcrt_alloc(uint32_t align, unsigned int sz_b, dma_addr_t * dma_addr);
 void fcrt_free(void * addr);
 
+static void fcrt_txdesc_out(struct device * dev, struct FCRT_TX_DESC * dp)
+{
+    dev_info(dev,
+             "TX[asm: %x]\tprio: %d\tperiod: %d\tmaxsz: %x\tq_depth: %d\tflags: "
+             "%x",
+             dp->asm_id, dp->dst_id, dp->priority, dp->period, dp->max_size, dp->q_depth,
+             dp->flags);
+}
+
+static void fcrt_rxdesc_out(struct device * dev, struct FCRT_RX_DESC * dp)
+{
+    dev_info(dev,
+             "RX[asm: %x]\tmaxsz: %x\tq_depth: %d\tflags: "
+             "%x", dp->asm_id, dp->max_size, dp->q_depth, dp->flags);
+}
+
+static void fcrt_conf_out(struct device * dev, FCRT_INIT_PARAMS * params)
+{
+	int i;
+	dev_info(dev, "[%s]-----------");
+	dev_info(dev, "CtrlRegs: %p\tVCnum: %d\tCtrlDesc. fc_id: %x\tbbNum: %d", params->regs, params->nVC, params->ctrl_d->fc_id, params->ctrl_d->bbNum);
+	dev_info(dev, "---VC descriptors---");
+	for(i = 0; i < params->nVC)
+	{
+		fcrt_txdesc_out(&params->txd[i]);
+		fcrt_rxdesc_out(&params->rxd[i]);
+	}
+}
+
 /**
  * @brief выделяет блок последовательной когерентной памяти с указанным выравниванием
  * 
@@ -191,18 +220,20 @@ ssize_t fcrtchr_read(struct file *flip, char __user *buf, size_t count,
 	struct fcrtchr_local *dev = flip->private_data;
 	ssize_t rv = 0;
 	unsigned int msg_sz;
+	u32 vc;
 
 	if (down_interruptible(&dev->sem))	
 		return -ERESTARTSYS;
 
 	printk(KERN_ERR "[%s] size to read: %lu", __func__, count);
-	if(fcrtChk(0) != 0)
+	vc = fcrtRxReady();
+	if(vc < 0)
 	{
 		printk(KERN_ERR "[%s]No data", __func__);
         rv = -EAGAIN;
 		goto out;
 	}
-	if(fcrtRecv(0, buf, &msg_sz) != 0)
+	if(fcrtRecv(vc, buf, &msg_sz) != 0)
     {
         rv = -EFAULT;
         goto out;
@@ -392,13 +423,12 @@ static int fcrtchr_probe(struct platform_device *pdev)
 	}
 
 	param.fcrt_alloc = fcrt_mem.alloc;
-	param.fcrt_free = fcrt_mem.rls;
-	param.nRx = 10;
-	param.nTx = 10;
+	param.nVC = 10;
 	param.txd = NULL;
 	param.rxd = NULL;
 	param.regs = NULL;
 	param.dev  = dev;
+	param.regs = lp->base_addr;
 	if(fcrtInit(&param) != 0)
 	{
 		printk(KERN_ALERT"[%s]fcrtInit fails", __func__);

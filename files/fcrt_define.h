@@ -10,6 +10,8 @@
 #ifndef FCRT_DEF_H
 #define FCRT_DEF_H
 
+///максимальное количество каналов на прием и на передачу
+#define FCRT_VC_MAX         64
 ///размер области ОЗУ для внутреннего исп-я контроллера
 /// @todo расчитывать по параметрам загрузочной таблицы
 #define FCRT_INTERNAL_RAM_SZ_B 0x100000u
@@ -32,7 +34,7 @@
  * @brief выделяет блок памяти с указанным выравниванием
  * 
  */
-typedef void* (*fcrt_allocator)(uint32_t, unsigned int, dma_addr_t*);
+typedef void* (*fcrt_allocator)(u32, u32, dma_addr_t*);
 
 /**
  * @brief освобождает блок памяти, полученный fcrt_allocator
@@ -48,6 +50,8 @@ typedef struct {
     unsigned period;        
 	/// ASM ID
     unsigned asm_id;        
+	// FC ID
+	unsigned dst_id;        
 	/// максимальный размер сообщения в байтах
     unsigned max_size;      
 	/// размер очереди сообщений
@@ -68,15 +72,29 @@ typedef struct {
     unsigned flags;         
 } FCRT_RX_DESC;
 
+// структура описания контроллера
+typedef struct {
+	// FC ID
+    unsigned fc_id;         
+	// число BB кредитов
+    unsigned bbNum;         
+} FCRT_CTRL_CFG;
+
 typedef struct 
 {
+	///адрес регистров контроллера
 	void __iomem * regs;
+	///число ВК
+	unsigned int nVC;
+	///массив описателей ВК передатчика
 	FCRT_TX_DESC * txd;
-	unsigned int nTx;
+	///массив описателей ВК приемника
 	FCRT_RX_DESC * rxd;
-	unsigned int nRx;
+	///структура описания контроллера
+	FCRT_CTRL_CFG * ctrl_d;
+	///Для выделения памяти
 	fcrt_allocator fcrt_alloc;
-	fcrt_release fcrt_free;
+	///для отладки, потом удалить!
 	struct device * dev;
 }FCRT_INIT_PARAMS;
 /*
@@ -119,10 +137,6 @@ int fcrtRecv(unsigned int vc, void* buf, unsigned int * size);
  * @param vc - asm_id канала
  * @return int 0-сообщения есть; -EAGAIN - сообщений нет
  */
-int fcrtChk(unsigned int vc);
+int fcrtRxReady(void);
 
-/**
- * @brief освобождает ресурсы
- * 
- */
 #endif
