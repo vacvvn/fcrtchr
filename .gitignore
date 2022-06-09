@@ -1,0 +1,13 @@
+*.symvers
+*.order
+files/*.ko
+files/*.mod
+files/*.mod.c
+files/*.o
+files/*.swp
+files/*.bin
+files/*.cmd
+files/*.o.d
+*.swp
+.*.swp
+.vscode/
