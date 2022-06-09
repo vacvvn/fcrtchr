@@ -29,7 +29,7 @@
 #include <linux/dma-mapping.h>
 
 #include "fcrt_define.h"
-#include "recvtask.h"
+// #include "recvtask.h"
 
 #define DEBUG_CHECK_PROBE_MODULE_CNT
 /* Standard module information, edit as appropriate */
@@ -352,9 +352,9 @@ static int fcrtchr_probe(struct platform_device *pdev)
         rc = -EIO;
         goto error2;
     }
-    dev_info(dev, "fcrtchr at 0x%08x mapped to 0x%08x, irq=%d\n",
-             (unsigned int __force)lp->mem_start, (unsigned int __force)lp->base_addr,
-             lp->irq);
+    dev_info(dev, "fcrtchr at %p mapped to %p, size=%x\n",
+             lp->mem_start, lp->base_addr,
+             resource_size(r_mem));
     /* Get IRQ for the device */
     /*
     r_irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
@@ -407,7 +407,7 @@ static int fcrtchr_probe(struct platform_device *pdev)
 	printk(KERN_INFO "fcrtch: major = %d minor = %d\n", fcrtchr_major, fcrtchr_minor);
 
 	dev_set_drvdata(dev, lp);
-	rtsk_init_task(100 * 1000 * 1000);
+	// rtsk_init_task(100 * 1000 * 1000);
     return 0;
 ///////////////////////////
 error6:

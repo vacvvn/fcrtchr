@@ -1,5 +1,5 @@
 obj-m := fcrtchr.o
-fcrtchr-objs := fcrtchr.o recvtask.o
+# fcrtchr-objs := fcrtchr.o 
 
 SRC := $(shell pwd)
 
