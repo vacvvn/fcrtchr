@@ -27,6 +27,7 @@
 #include <linux/of_device.h>
 #include <linux/of_platform.h>
 #include <linux/dma-mapping.h>
+#include <linux/uaccess.h>
 
 #include "fcrt_define.h"
 // #include "recvtask.h"
@@ -99,17 +100,33 @@ void fcrt_free(void * addr);
  
 static struct hrtimer g_hrtimer0;
 static u64 nsec_time = (1000000u);
+
+static u8 rcvBuf[MSG_MAX_LEN + 2];
+static u8 sndBuf[MSG_MAX_LEN + 2];
  
 static enum hrtimer_restart hrtimer_test_fn(struct hrtimer *hrtimer)
 {
-	static u64 divider =0;
-	divider++;
-	if(divider == 1000)
+	u32 sz;
+	// static u64 divider =0;
+	// divider++;
+	// if(divider == 1000)
+	// {
+	// 	pr_err("#### hrtimer timeout: 1Sec");
+	// 	divider = 0;
+	// }
+	int vc = fcrtRxReady();
+	if(vc > -1)
 	{
-		pr_err("#### hrtimer timeout: 1Sec");
-		divider = 0;
+		if(fcrtRecv(vc, rcvBuf, &sz) != 0)
+		{
+			printk(KERN_ERR"[%s]Can't read msg from vc[%d]", __func__, vc);
+		}
+		else
+		{
+            print_hex_dump(KERN_INFO, "r_msg: ", DUMP_PREFIX_NONE, 32, 1, rcvBuf, sz,
+                           true);
+        }
 	}
-	
     hrtimer_forward_now(hrtimer, ns_to_ktime(nsec_time));
 	return HRTIMER_RESTART;
 }
@@ -278,11 +295,17 @@ ssize_t fcrtchr_read(struct file *flip, char __user *buf, size_t count,
         rv = -EAGAIN;
 		goto out;
 	}
-	if(fcrtRecv(vc, buf, &msg_sz) != 0)
+	if(fcrtRecv(vc, rcvBuf, &msg_sz) != 0)
     {
         rv = -EFAULT;
         goto out;
     }
+	if(copy_to_user(buf, rcvBuf, msg_sz) != 0)
+	{
+		printk(KERN_ERR"[%s]could not copy message to buffer", __func__);
+		rv = -ENOMEM;
+		goto out;
+	}
 	rv = msg_sz;
 #if 1
 	printk(KERN_ERR "[%s]Msg size: %d", __func__, msg_sz);
@@ -307,9 +330,22 @@ ssize_t fcrtchr_write(struct file *flip, const char __user *buf, size_t count,
 	printk(KERN_ALERT "[%s]bytes to write: %lu; msg: ", __func__, count);
 	print_hex_dump(KERN_ALERT, "usr_data: ", DUMP_PREFIX_NONE, 32, 1, buf, count, true);
 #endif
-	if(fcrtSend(0, (void*)buf, (unsigned int)count) != 0)
+	if(count > MSG_MAX_LEN)
+	{
+		printk(KERN_ERR"[%s]Message max size is: %d", __func__, MSG_MAX_LEN);
+		rv = -ENOMEM;
+		goto out;
+	}
+	if(copy_from_user(sndBuf, buf, count) != 0)
+	{
+		printk(KERN_ERR"[%s]Could not copy message for write", __func__);
+		rv = -EFAULT;
+		goto out;
+	}
+	if(fcrtSend(0, (void*)sndBuf, (unsigned int)count) != 0)
 	{
 		printk(KERN_ALERT"[%s]fcrtSend fails", __func__);
+		rv = -ENOMEM;
 		goto out;
 	}
 	rv = count;

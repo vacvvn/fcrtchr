@@ -9,7 +9,10 @@
  */
 #ifndef FCRT_DEF_H
 #define FCRT_DEF_H
-
+////////debug///////////
+#define Q_LEN	    4
+#define MSG_MAX_LEN 8
+//////////////////////////
 ///максимальное количество каналов на прием и на передачу
 #define FCRT_VC_MAX         64
 ///размер области ОЗУ для внутреннего исп-я контроллера
@@ -135,7 +138,7 @@ int fcrtRecv(unsigned int vc, void* buf, unsigned int * size);
  * @brief проверка сообщений в очереди канала
  * 
  * @param vc - asm_id канала
- * @return int 0-сообщения есть; -EAGAIN - сообщений нет
+ * @return int номер канала с принятым сообщением; -1 - сообщений нет
  */
 int fcrtRxReady(void);
 
