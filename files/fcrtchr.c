@@ -92,16 +92,16 @@ struct fcrt_priv_mem fcrt_mem;
 void * fcrt_alloc(uint32_t align, unsigned int sz_b, dma_addr_t * dma_addr);
 void fcrt_free(void * addr);
 
-static void fcrt_txdesc_out(struct device * dev, struct FCRT_TX_DESC * dp)
+static void fcrt_txdesc_out(struct device * dev, FCRT_TX_DESC * dp)
 {
     dev_info(dev,
-             "TX[asm: %x]\tprio: %d\tperiod: %d\tmaxsz: %x\tq_depth: %d\tflags: "
+             "TX[asm: %x]\tdst_id: %x\tprio: %d\tperiod: %d\tmaxsz: %x\tq_depth: %d\tflags: "
              "%x",
              dp->asm_id, dp->dst_id, dp->priority, dp->period, dp->max_size, dp->q_depth,
              dp->flags);
 }
 
-static void fcrt_rxdesc_out(struct device * dev, struct FCRT_RX_DESC * dp)
+static void fcrt_rxdesc_out(struct device * dev, FCRT_RX_DESC * dp)
 {
     dev_info(dev,
              "RX[asm: %x]\tmaxsz: %x\tq_depth: %d\tflags: "
@@ -114,10 +114,10 @@ static void fcrt_conf_out(struct device * dev, FCRT_INIT_PARAMS * params)
 	dev_info(dev, "[%s]-----------");
 	dev_info(dev, "CtrlRegs: %p\tVCnum: %d\tCtrlDesc. fc_id: %x\tbbNum: %d", params->regs, params->nVC, params->ctrl_d->fc_id, params->ctrl_d->bbNum);
 	dev_info(dev, "---VC descriptors---");
-	for(i = 0; i < params->nVC)
+	for(i = 0; i < params->nVC; i++)
 	{
-		fcrt_txdesc_out(&params->txd[i]);
-		fcrt_rxdesc_out(&params->rxd[i]);
+		fcrt_txdesc_out(dev, &params->txd[i]);
+		fcrt_rxdesc_out(dev, &params->rxd[i]);
 	}
 }
 
