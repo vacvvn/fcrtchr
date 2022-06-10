@@ -49,9 +49,12 @@ MODULE_DESCRIPTION
 /* Simple example of how to receive command line parameters to your module.
    Delete if you don't need them */
 unsigned int area_sz = 0x500u;
+///период в мсек
+unsigned int ms_period = 1u;
 char *mystr = "default";
 
 module_param(area_sz, int, S_IRUGO);
+module_param(ms_period, int, S_IRUGO);
 module_param(mystr, charp, S_IRUGO);
 
 #define FCRTCHR_DEV_MAX	1
@@ -93,16 +96,15 @@ void * fcrt_alloc(uint32_t align, unsigned int sz_b, dma_addr_t * dma_addr);
 void fcrt_free(void * addr);
 
 //////////////
-#define	HRTIMER0_US	(100 * 1000 * 1000)
  
 static struct hrtimer g_hrtimer0;
-static u64 nsec_time = HRTIMER0_US;
+static u64 nsec_time = (1000000u);
  
 static enum hrtimer_restart hrtimer_test_fn(struct hrtimer *hrtimer)
 {
 	static u64 divider =0;
 	divider++;
-	if(divider == 10)
+	if(divider == 1000)
 	{
 		pr_err("#### hrtimer timeout: 1Sec");
 		divider = 0;
@@ -480,7 +482,7 @@ static int fcrtchr_probe(struct platform_device *pdev)
 	printk(KERN_INFO "fcrtch: major = %d minor = %d\n", fcrtchr_major, fcrtchr_minor);
 
 	dev_set_drvdata(dev, lp);
-	rtsk_init_task(100 * 1000 * 1000);
+	rtsk_init_task(ms_period * 1000 * 1000);
     return 0;
 ///////////////////////////
 error6:
