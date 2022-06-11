@@ -151,8 +151,45 @@ void hr_timer_test_exit (void)
 	hrtimer_cancel(hrtimer);
     pr_err("#### hr_timer_test module exit...\n");
 }
-
+#define DST_ID_DEFAULT	0xDEDABABAu
+#define ASM_ID_FIRST_NUM	0x10000000u
+#define NEXT_ASM_ID(N)	(ASM_ID_FIRST_NUM + (N))
+#define FCRT_TX_FLG	(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
+#define FCRT_RX_FLG	(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
+#define FCRT_TX_MSG_SZ	0x100u
+#define FCRT_RX_MSG_SZ	0x200u
+#define FCRT_PRD		0
+#define FCRT_PRIO		0
+#define FCRT_TX_QDEPTH  5
+#define FCRT_RX_QDEPTH  5
 /////////////////
+static FCRT_TX_DESC txd[] = {
+	{.asm_id = NEXT_ASM_ID(0), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+
+	{.asm_id = NEXT_ASM_ID(1), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+
+	{.asm_id = NEXT_ASM_ID(2), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+
+	{.asm_id = NEXT_ASM_ID(3), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+
+	{.asm_id = NEXT_ASM_ID(4), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+};
+
+static FCRT_RX_DESC rxd[] = {
+	{.asm_id = NEXT_ASM_ID(100), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+
+	{.asm_id = NEXT_ASM_ID(101), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+
+	{.asm_id = NEXT_ASM_ID(102), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+
+	{.asm_id = NEXT_ASM_ID(103), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+
+	{.asm_id = NEXT_ASM_ID(104), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+};
+
+static FCRT_CTRL_CFG cfg = {
+	.bbNum = 2, .fc_id = DST_ID_DEFAULT
+};
 
 static void fcrt_txdesc_out(struct device * dev, FCRT_TX_DESC * dp)
 {
@@ -504,13 +541,17 @@ static int fcrtchr_probe(struct platform_device *pdev)
 	}
 
 	param.fcrt_alloc = fcrt_mem.alloc;
-	param.nVC = 10;
-	param.txd = NULL;
-	param.rxd = NULL;
-	param.regs = NULL;
-	param.dev  = dev;
 	param.regs = lp->base_addr;
-	if(fcrtInit(&param) != 0)
+	param.dev  = dev;
+
+	param.nVC = sizeof(txd) / sizeof(txd[0]);
+	param.txd = txd;
+	param.rxd = rxd;
+	fcrt_conf_out(dev, &param);
+
+	// rc = fcrtInit(&param);
+	rc = fcrtInit(lp->base_addr, &cfg, txd, rxd, param.nVC, param.fcrt_alloc);
+	if(rc != 0)
 	{
 		printk(KERN_ALERT"[%s]fcrtInit fails", __func__);
 		goto error6;
