@@ -49,13 +49,22 @@ MODULE_DESCRIPTION
 
 /* Simple example of how to receive command line parameters to your module.
    Delete if you don't need them */
-unsigned int area_sz = 0x500u;
+///размер области озу для fcrt контроллера
+unsigned int area_sz = 0x100000u;
 ///период в мсек
 unsigned int ms_period = 1u;
+/**
+ * @details конфигурация закоротки. 0-сообщение отправляется в контроллер, закорачивается в нем и принимается драйвером; 1-сообщение принимается драйвером, закорачивается и отправляется в контроллер
+ *
+ */
+#define LOOPBACK_IN_DEV 0
+#define LOOPBACK_IN_DRV 1
+unsigned int loopback_dir=LOOPBACK_IN_DEV;
 char *mystr = "default";
 
 module_param(area_sz, int, S_IRUGO);
 module_param(ms_period, int, S_IRUGO);
+module_param(loopback_dir, int, S_IRUGO);
 module_param(mystr, charp, S_IRUGO);
 
 #define FCRTCHR_DEV_MAX	1
@@ -123,6 +132,13 @@ static enum hrtimer_restart hrtimer_test_fn(struct hrtimer *hrtimer)
 		}
 		else
 		{
+			if(loopback_dir == LOOPBACK_IN_DRV)
+			{
+				if(fcrtSend(vc, rcvBuf, sz) != 0)
+				{
+					printk(KERN_ERR"[%s]Can't write msg to vc[%d]", __func__, vc);
+				}
+			}
             print_hex_dump(KERN_INFO, "r_msg: ", DUMP_PREFIX_NONE, 32, 1, rcvBuf, sz,
                            true);
         }
@@ -637,7 +653,7 @@ static int __init fcrtchr_init(void)
         printk(KERN_WARNING "fcrtchr: can't get major %d\n", fcrtchr_major);
         return rv;
     }
-	printk("<1>FCRTchrModule parameters were (FCRT priv area sz: 0x%08x)", area_sz);
+	printk(KERN_INFO"FCRTchrModule parameters were\nFCRT priv area sz: 0x%08x\nchk rx msg period: %d(msec)\ndata loopback dir: %s", area_sz, ms_period, (loopback_dir == LOOPBACK_IN_DEV) ? "loop data in device": "loop data in driver");
 
 	return platform_driver_register(&fcrtchr_driver);
 }
