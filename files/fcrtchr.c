@@ -69,7 +69,7 @@ module_param(mystr, charp, S_IRUGO);
 
 #define FCRTCHR_DEV_MAX	1
 
-static dev_t fcrtchr_major;
+static int fcrtchr_major;
 static int fcrtchr_minor = 0;
 
 struct fcrt_priv_mem
@@ -91,7 +91,6 @@ struct fcrtchr_local
     unsigned long mem_end;
     void __iomem *base_addr;
     struct cdev c_dev;
-    struct device dev; // for cdev
     struct device *dev_parent;
     struct semaphore sem;
 };
@@ -229,7 +228,7 @@ static void fcrt_rxdesc_out(struct device * dev, FCRT_RX_DESC * dp)
 static void fcrt_conf_out(struct device * dev, FCRT_INIT_PARAMS * params)
 {
 	int i;
-	dev_info(dev, "[%s]-----------");
+	dev_info(dev, "[%s]-----------", __func__);
 	dev_info(dev, "CtrlRegs: %p\tVCnum: %d\tCtrlDesc. fc_id: %x\tbbNum: %d", params->regs, params->nVC, params->ctrl_d->fc_id, params->ctrl_d->bbNum);
 	dev_info(dev, "---VC descriptors---");
 	for(i = 0; i < params->nVC; i++)
@@ -460,11 +459,7 @@ static int fcrtchr_setup_cdev(struct fcrtchr_local *dev, int index)
 	cdev_init(&dev->c_dev, &fcrtchr_fops);
     dev->c_dev.owner = THIS_MODULE;
 
-    dev_set_name(&dev->dev, "fcrtchr%d", index);
-    dev->dev.id = index;
-    dev->dev.devt = MKDEV(MAJOR(fcrtchr_major), fcrtchr_minor + index);
-
-    ret = cdev_device_add(&dev->c_dev, &dev->dev);
+    ret = cdev_add(&dev->c_dev, devno, 1);
 	return ret;
 }
 
@@ -554,13 +549,14 @@ static int fcrtchr_probe(struct platform_device *pdev)
     }
     */
 	//setup device for cdev
-	device_initialize(&lp->dev);
 	if(fcrtchr_setup_cdev(lp, 0) != 0)
 	{
         dev_err(dev, "failed to setup cdev");
 		rc = -EIO;
 		goto error4;
 	}
+	else
+		printk(KERN_INFO"setup cdev OK. major: %d; minor: %d", fcrtchr_major, fcrtchr_minor);
 	sema_init(&lp->sem, 1);
 	
 	if(fcrt_init_priv_mem(dev, &fcrt_mem, area_sz) != 0)
@@ -569,6 +565,8 @@ static int fcrtchr_probe(struct platform_device *pdev)
 		rc = -ENOMEM;
 		goto error5;
 	}
+	else
+		printk(KERN_INFO"init priv mem is OK");
 
 	param.fcrt_alloc = fcrt_mem.alloc;
 	param.regs = lp->base_addr;
@@ -579,6 +577,7 @@ static int fcrtchr_probe(struct platform_device *pdev)
 	param.ctrl_d->bbNum = BBNUM_DEF;
 	param.txd = txd;
 	param.rxd = rxd;
+	printk(KERN_INFO"1");
 	fcrt_conf_out(dev, &param);
 	dev_info(dev, "[%s]Try to init FCRT dev", __func__);
 #ifdef FCRT_INIT_LONG_PARAM
@@ -598,9 +597,8 @@ static int fcrtchr_probe(struct platform_device *pdev)
     return 0;
 ///////////////////////////
 error6:
-	cdev_device_del(&lp->c_dev, &lp->dev);
+	cdev_del(&lp->c_dev);
 error5:
-	put_device(&lp->dev);
 error4:
     // free_irq(lp->irq, lp);
 error3:
@@ -621,6 +619,8 @@ static int fcrtchr_remove(struct platform_device *pdev)
 #endif
 	struct device *dev = &pdev->dev;
 	struct fcrtchr_local *lp = dev_get_drvdata(dev);
+	hr_timer_test_exit();
+	cdev_del(&lp->c_dev);
 	// free_irq(lp->irq, lp);
 	kfree(lp);
 	dev_set_drvdata(dev, NULL);
@@ -654,6 +654,8 @@ static struct platform_driver fcrtchr_driver = {
 
 static int __init fcrtchr_init(void)
 {
+	dev_t dev;
+	int rv;
 #ifdef DEBUG_CHECK_PROBE_MODULE_CNT
 	static int init_cnt = 0;
 	if(init_cnt > 0)
@@ -664,14 +666,15 @@ static int __init fcrtchr_init(void)
 	}
 	init_cnt++;
 #endif
-	int rv;
 
-    rv = alloc_chrdev_region(&fcrtchr_major, fcrtchr_minor, FCRTCHR_DEV_MAX, "fcrtchr");
+    rv = alloc_chrdev_region(&dev, fcrtchr_minor, FCRTCHR_DEV_MAX, "fcrtchr");
     if (rv)
     {
         printk(KERN_WARNING "fcrtchr: can't get major %d\n", fcrtchr_major);
         return rv;
     }
+	fcrtchr_major = MAJOR(dev);
+	printk(KERN_INFO"[%s]fcrtchr_major: %x", __func__, fcrtchr_major);
 	printk(KERN_INFO"FCRTchrModule parameters were\nFCRT priv area sz: 0x%08x\nchk rx msg period: %d(msec)\ndata loopback dir: %s", area_sz, ms_period, (loopback_dir == LOOPBACK_IN_DEV) ? "loop data in device": "loop data in driver");
 
 	return platform_driver_register(&fcrtchr_driver);
@@ -680,6 +683,8 @@ static int __init fcrtchr_init(void)
 
 static void __exit fcrtchr_exit(void)
 {
+	dev_t devno = MKDEV(fcrtchr_major, fcrtchr_minor);
+	unregister_chrdev_region(devno, FCRTCHR_DEV_MAX); 
 	platform_driver_unregister(&fcrtchr_driver);
 	printk(KERN_ALERT "FCRTchr. Goodbye module world.\n");
 }
