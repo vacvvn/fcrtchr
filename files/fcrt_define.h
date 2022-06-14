@@ -9,7 +9,22 @@
  */
 #ifndef FCRT_DEF_H
 #define FCRT_DEF_H
+///разрядность указателей 64 бита
+#define SYSTEM_X64
+
+///разрядность указателей 32 бита
+// #define SYSTEM_X32
+
+#ifdef SYSTEM_X32
+///разрядность указателя
+typedef uint32_t platform_addr_type;
+#elif defined(SYSTEM_X64)
+///разрядность указателя
+typedef uint64_t platform_addr_type;
+#endif:/// @warning 
 ////////debug///////////
+/// вариант сигнатуры fcrtInit
+#define FCRT_INIT_LONG_PARAM
 #define Q_LEN	    4
 #define MSG_MAX_LEN 8
 //////////////////////////
@@ -37,7 +52,7 @@
  * @brief выделяет блок памяти с указанным выравниванием
  * 
  */
-typedef void* (*fcrt_allocator)(u32, u32, dma_addr_t*);
+typedef void* (*fcrt_allocator)(u32 sz, u32 align, dma_addr_t* dma_addr);
 
 /**
  * @brief освобождает блок памяти, полученный fcrt_allocator
@@ -113,10 +128,13 @@ typedef struct
  * 
  * @return int 0-OK;  EINVAL- неверный параметр; ENOMEM - ошибка при выделении памяти
  */
-// int fcrtInit(FCRT_INIT_PARAMS * param);
-// функция инициализации
+#ifdef FCRT_INIT_LONG_PARAM
 int fcrtInit(void* regs, FCRT_CTRL_CFG* ctrl, FCRT_TX_DESC* txCfg, FCRT_RX_DESC* rxCfg,
 unsigned nVC, fcrt_allocator fcrtAlloc);
+#else
+int fcrtInit(FCRT_INIT_PARAMS * param);
+#endif
+// функция инициализации
 /**
  * @brief функция отправки сообщения по ВК
  *

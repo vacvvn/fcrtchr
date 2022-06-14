@@ -76,8 +76,9 @@ struct fcrt_priv_mem
 {
 	u8 * base_m;
 	dma_addr_t base_dma;
+	u8 * cur_addr;
+	dma_addr_t cur_dma;
 	unsigned int total;
-	unsigned int used;
 	fcrt_allocator alloc;
 	fcrt_release rls;
 	u32 bl_cntr;
@@ -139,6 +140,7 @@ static enum hrtimer_restart hrtimer_test_fn(struct hrtimer *hrtimer)
 					printk(KERN_ERR"[%s]Can't write msg to vc[%d]", __func__, vc);
 				}
 			}
+			printk(KERN_INFO"msg rcvd vc[%d]", vc);
             print_hex_dump(KERN_INFO, "r_msg: ", DUMP_PREFIX_NONE, 32, 1, rcvBuf, sz,
                            true);
         }
@@ -171,10 +173,10 @@ void hr_timer_test_exit (void)
 #define BBNUM_DEF		2u
 #define ASM_ID_FIRST_NUM	0x10000000u
 #define NEXT_ASM_ID(N)	(ASM_ID_FIRST_NUM + (N))
-#define FCRT_TX_FLG	(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
-#define FCRT_RX_FLG	(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
-#define FCRT_TX_MSG_SZ	0x100u
-#define FCRT_RX_MSG_SZ	0x200u
+#define FCRT_TX_FLG	0//(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
+#define FCRT_RX_FLG	0 //(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
+#define FCRT_TX_MSG_SZ	0x400u
+#define FCRT_RX_MSG_SZ	0x400u
 #define FCRT_PRD		0
 #define FCRT_PRIO		0
 #define FCRT_TX_QDEPTH  5
@@ -183,25 +185,25 @@ void hr_timer_test_exit (void)
 static FCRT_TX_DESC txd[] = {
 	{.asm_id = NEXT_ASM_ID(0), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
-	{.asm_id = NEXT_ASM_ID(1), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+	// {.asm_id = NEXT_ASM_ID(1), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
-	{.asm_id = NEXT_ASM_ID(2), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+	// {.asm_id = NEXT_ASM_ID(2), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
-	{.asm_id = NEXT_ASM_ID(3), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+	// {.asm_id = NEXT_ASM_ID(3), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
-	{.asm_id = NEXT_ASM_ID(4), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+	// {.asm_id = NEXT_ASM_ID(4), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 };
 
 static FCRT_RX_DESC rxd[] = {
-	{.asm_id = NEXT_ASM_ID(100), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(0), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
-	{.asm_id = NEXT_ASM_ID(101), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	// {.asm_id = NEXT_ASM_ID(101), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
-	{.asm_id = NEXT_ASM_ID(102), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	// {.asm_id = NEXT_ASM_ID(102), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
-	{.asm_id = NEXT_ASM_ID(103), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	// {.asm_id = NEXT_ASM_ID(103), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
-	{.asm_id = NEXT_ASM_ID(104), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	// {.asm_id = NEXT_ASM_ID(104), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 };
 
 static FCRT_CTRL_CFG cfg = {
@@ -245,24 +247,34 @@ static void fcrt_conf_out(struct device * dev, FCRT_INIT_PARAMS * params)
  * @param dma_addr физ адрес для доступа дма
  * @return void* указатель на блок или NULL
  */
-void * fcrt_alloc(uint32_t align, unsigned int sz_b, dma_addr_t * dma_addr)
+
+void * fcrt_alloc(u32 sz_b, u32 align, dma_addr_t * dma_addr)
 {
-	unsigned int tmp_sz = ALIGN(fcrt_mem.used, align);
-	unsigned int new_sz = tmp_sz + sz_b;
-	u8 * base = fcrt_mem.base_m;
-#if 0
-	printk(KERN_INFO"[%s]mem_base: %p", __func__, (void*)base);
-	printk(KERN_INFO"[%s]alloc cntr: %d", __func__, fcrt_mem.bl_cntr);
-	printk(KERN_INFO"[%s]used: %x\talign: %x\tused with align: %x\tnew sz: %x", __func__, fcrt_mem.used, align, tmp_sz, sz_b);
+    uint8_t *cur_addr_aligned =
+        (uint8_t *)ALIGN((platform_addr_type)fcrt_mem.cur_addr, align);
+    dma_addr_t cur_dma_aligned = (dma_addr_t)ALIGN((dma_addr_t)fcrt_mem.cur_dma, align);
+
+#if 1
+	printk(KERN_INFO"[%s]---- mem alloc ----------", __func__);
+    printk(KERN_INFO "mem_base. virt: %p; dma: %p", (void *)fcrt_mem.base_m,
+           (void *)fcrt_mem.base_dma);
+    printk(KERN_INFO "alloc cntr: %d", fcrt_mem.bl_cntr);
+	printk(KERN_INFO"align: d%d(x%x); size: d%d(x%x)", align, align, sz_b, sz_b);
+    printk(KERN_INFO "cur_addr. virt: %p\tdma: %p", fcrt_mem.cur_addr,
+           (void *)fcrt_mem.cur_dma);
+    printk(KERN_INFO "cur_addr aligned. virt: %p\tdma: %p", cur_addr_aligned,
+           cur_dma_aligned);
 #endif
-	if(new_sz > fcrt_mem.total)
+	if(cur_addr_aligned + sz_b >= &fcrt_mem.base_m[fcrt_mem.total])
 		return NULL;
-	void * buf = (void*)&base[tmp_sz];
-	fcrt_mem.used = new_sz;
+	void * buf = (void*)cur_addr_aligned;
+	*dma_addr = cur_dma_aligned;
+	fcrt_mem.cur_addr = cur_addr_aligned + sz_b;
+	fcrt_mem.cur_dma = cur_dma_aligned + sz_b;
 	fcrt_mem.bl_cntr++;
-	// *dma_addr = (dma_addr_t)buf;//TODO изменить на реальный адрес
-#if 0
-	printk(KERN_INFO"[%s]addr: %p", __func__, buf);
+#if 1
+	printk(KERN_INFO"Allocated. v.addr: %p; dma addr: %p",  buf, (void*)*dma_addr);
+	printk(KERN_INFO"--------------------");
 #endif
 	return buf;
 }
@@ -288,7 +300,6 @@ static int fcrt_init_priv_mem(struct device *dev, struct fcrt_priv_mem *mem,
                               unsigned int sz)
 {
     struct fcrtchr_local *lp = dev_get_drvdata(dev);
-    mem->used = 0;
     mem->bl_cntr = 0;
     mem->alloc = fcrt_alloc;
     mem->rls = fcrt_free;
@@ -310,6 +321,8 @@ static int fcrt_init_priv_mem(struct device *dev, struct fcrt_priv_mem *mem,
                mem->total);
         return -ENOMEM;
     }
+	mem->cur_addr = mem->base_m;
+	mem->cur_dma = mem->base_dma;
 #if 1
     dev_info(dev, "[%s]Coherent mem. Base virt: %p; Base phys: %p; size: 0x%x", __func__,
              mem->base_m, (void *)mem->base_dma, mem->total);
@@ -396,9 +409,9 @@ ssize_t fcrtchr_write(struct file *flip, const char __user *buf, size_t count,
 		rv = -EFAULT;
 		goto out;
 	}
-	if(fcrtSend(0, (void*)sndBuf, (unsigned int)count) != 0)
+	if(fcrtSend(txd[0].asm_id, (void*)sndBuf, (unsigned int)count) != 0)
 	{
-		printk(KERN_ALERT"[%s]fcrtSend fails", __func__);
+		printk(KERN_ALERT"[%s]fcrtSend fails. VC[%d]", __func__, txd[0].asm_id);
 		rv = -ENOMEM;
 		goto out;
 	}
@@ -567,9 +580,12 @@ static int fcrtchr_probe(struct platform_device *pdev)
 	param.txd = txd;
 	param.rxd = rxd;
 	fcrt_conf_out(dev, &param);
-
-	// rc = fcrtInit(&param);
+	dev_info(dev, "[%s]Try to init FCRT dev", __func__);
+#ifdef FCRT_INIT_LONG_PARAM
 	rc = fcrtInit(lp->base_addr, &cfg, txd, rxd, param.nVC, param.fcrt_alloc);
+#else
+	rc = fcrtInit(&param);
+#endif
 	if(rc != 0)
 	{
 		printk(KERN_ALERT"[%s]fcrtInit fails", __func__);
