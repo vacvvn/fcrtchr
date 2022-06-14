@@ -113,14 +113,15 @@ typedef struct
  * 
  * @return int 0-OK;  EINVAL- неверный параметр; ENOMEM - ошибка при выделении памяти
  */
-// int fcrtInit(FCRT_INIT_PARAMS * param);
+int fcrtInit(FCRT_INIT_PARAMS * param);
 // функция инициализации
-int fcrtInit(void* regs, FCRT_CTRL_CFG* ctrl, FCRT_TX_CFG* txCfg, FCRT_RX_CFG* rxCfg, unsigned nVC, fcrt_allocator fcrtAlloc);
+// int fcrtInit(void* regs, FCRT_CTRL_CFG* ctrl, FCRT_TX_DESC* txCfg, FCRT_RX_DESC* rxCfg,
+// unsigned nVC, fcrt_allocator fcrtAlloc);
 /**
  * @brief функция отправки сообщения по ВК
- * 
+ *
  * @param vc - номер ВК (индекс в массиве tx)
- * @param buf- адрес буфера, где лежит сообщение. 
+ * @param buf- адрес буфера, где лежит сообщение.
  * @param size - размер сообщения в байтах
  * @return int 0-OK; EINVAL - задан неверный параметр; EAGAIN - в очереди нет места
  */
