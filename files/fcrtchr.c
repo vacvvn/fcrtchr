@@ -168,7 +168,7 @@ void hr_timer_test_exit (void)
     pr_err("#### hr_timer_test module exit...\n");
 }
 #define DST_ID_DEFAULT	0xDEDABABAu
-#define BBNUM_DEF		0xABCDEF01;
+#define BBNUM_DEF		2u
 #define ASM_ID_FIRST_NUM	0x10000000u
 #define NEXT_ASM_ID(N)	(ASM_ID_FIRST_NUM + (N))
 #define FCRT_TX_FLG	(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
@@ -205,7 +205,7 @@ static FCRT_RX_DESC rxd[] = {
 };
 
 static FCRT_CTRL_CFG cfg = {
-	.bbNum = 2, .fc_id = DST_ID_DEFAULT
+	.bbNum = BBNUM_DEF, .fc_id = DST_ID_DEFAULT
 };
 
 static void fcrt_txdesc_out(struct device * dev, FCRT_TX_DESC * dp)
@@ -472,7 +472,6 @@ static int fcrtchr_probe(struct platform_device *pdev)
     struct device *dev = &pdev->dev;
     struct fcrtchr_local *lp = NULL;
 	FCRT_INIT_PARAMS param;
-	FCRT_CTRL_CFG ctrl_cfg;
 
     int rc = 0;
     dev_info(dev, "Device Tree Probing\n");
@@ -562,15 +561,15 @@ static int fcrtchr_probe(struct platform_device *pdev)
 	param.regs = lp->base_addr;
 	param.dev  = dev;
 	param.nVC = sizeof(txd) / sizeof(txd[0]);
-	param.ctrl_d = &ctrl_cfg;
+	param.ctrl_d = &cfg;
 	param.ctrl_d->fc_id = DST_ID_DEFAULT;
 	param.ctrl_d->bbNum = BBNUM_DEF;
 	param.txd = txd;
 	param.rxd = rxd;
 	fcrt_conf_out(dev, &param);
 
-	rc = fcrtInit(&param);
-	// rc = fcrtInit(lp->base_addr, &cfg, txd, rxd, param.nVC, param.fcrt_alloc);
+	// rc = fcrtInit(&param);
+	rc = fcrtInit(lp->base_addr, &cfg, txd, rxd, param.nVC, param.fcrt_alloc);
 	if(rc != 0)
 	{
 		printk(KERN_ALERT"[%s]fcrtInit fails", __func__);
