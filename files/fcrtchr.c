@@ -33,6 +33,9 @@
 // #include "recvtask.h"
 
 #define DEBUG_CHECK_PROBE_MODULE_CNT
+
+///после отправки сообщения через паузу выводить статус контроллера
+#define USE_FCRTSHOW
 /* Standard module information, edit as appropriate */
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR
@@ -113,16 +116,24 @@ static u64 nsec_time = (1000000u);
 static u8 rcvBuf[MSG_MAX_LEN + 2];
 static u8 sndBuf[MSG_MAX_LEN + 2];
  
+static u32 send_msg_flag = 0;
 static enum hrtimer_restart hrtimer_test_fn(struct hrtimer *hrtimer)
 {
 	u32 sz;
-	// static u64 divider =0;
-	// divider++;
-	// if(divider == 1000)
-	// {
-	// 	pr_err("#### hrtimer timeout: 1Sec");
-	// 	divider = 0;
-	// }
+#ifdef USE_FCRTSHOW
+	static u64 divider =0;
+	if(send_msg_flag > 0)
+	{
+		divider++;
+		if(divider == 100)
+		{
+			pr_err("#### hrtimer timeout: %d msec", divider);
+			send_msg_flag = 0;
+			divider = 0;
+			fcrtShow(0, 0, 0);
+		}
+	}
+#endif
 	int vc = fcrtRxReady();
 	if(vc > -1)
 	{
@@ -181,6 +192,8 @@ void hr_timer_test_exit (void)
 #define FCRT_TX_QDEPTH  5
 #define FCRT_RX_QDEPTH  5
 /////////////////
+///индекс вк для отправки
+#define DEF_TX_VC			0
 static FCRT_TX_DESC txd[] = {
 	{.asm_id = NEXT_ASM_ID(0), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
@@ -193,6 +206,8 @@ static FCRT_TX_DESC txd[] = {
 	// {.asm_id = NEXT_ASM_ID(4), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 };
 
+///индекс вк для приема
+#define DEF_RX_VC			0
 static FCRT_RX_DESC rxd[] = {
 	{.asm_id = NEXT_ASM_ID(0), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
@@ -408,13 +423,14 @@ ssize_t fcrtchr_write(struct file *flip, const char __user *buf, size_t count,
 		rv = -EFAULT;
 		goto out;
 	}
-	if(fcrtSend(txd[0].asm_id, (void*)sndBuf, (unsigned int)count) != 0)
+	if(fcrtSend(DEF_TX_VC, (void*)sndBuf, (unsigned int)count) != 0)
 	{
 		printk(KERN_ALERT"[%s]fcrtSend fails. VC[%d]", __func__, txd[0].asm_id);
 		rv = -ENOMEM;
 		goto out;
 	}
 	rv = count;
+	send_msg_flag = 1;
 
 out:
 	up(&dev->sem);
