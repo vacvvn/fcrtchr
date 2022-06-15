@@ -363,8 +363,7 @@ static void fcrt_release_priv_mem(struct device * dev, struct fcrt_priv_mem * me
 }
 //////////////////////////////
 
-ssize_t fcrtchr_read(struct file *flip, char __user *buf, size_t count,
-				loff_t *f_pos)
+ssize_t fcrtchr_read(struct file *flip, char __user *buf, size_t count, loff_t *f_pos)
 {
 	struct fcrtchr_local *dev = flip->private_data;
 	ssize_t rv = 0;
@@ -387,13 +386,13 @@ ssize_t fcrtchr_read(struct file *flip, char __user *buf, size_t count,
         rv = -EFAULT;
         goto out;
     }
-	if(copy_to_user(buf, rcvBuf, msg_sz) != 0)
+	rv = (msg_sz < count)? msg_sz: count;
+	if(copy_to_user(buf, rcvBuf, rv) != 0)
 	{
 		printk(KERN_ERR"[%s]could not copy message to buffer", __func__);
 		rv = -ENOMEM;
 		goto out;
 	}
-	rv = msg_sz;
 #if 1
 	printk(KERN_ERR "[%s]Msg size: %d", __func__, msg_sz);
 	print_hex_dump(KERN_INFO, "msg: ", DUMP_PREFIX_NONE, 32, 1, buf, rv, true);
