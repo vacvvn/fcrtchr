@@ -56,6 +56,8 @@ MODULE_DESCRIPTION
 unsigned int area_sz = 0x100000u;
 ///период в мсек
 unsigned int ms_period = 1u;
+///вывод статуса контроллера после отправки сообщения
+unsigned int stat_tx=0;
 /**
  * @details конфигурация закоротки. 0-сообщение отправляется в контроллер, закорачивается в нем и принимается драйвером; 1-сообщение принимается драйвером, закорачивается и отправляется в контроллер
  *
@@ -65,6 +67,7 @@ unsigned int ms_period = 1u;
 unsigned int loopback_dir=LOOPBACK_IN_DEV;
 char *mystr = "default";
 
+module_param(stat_tx, int, S_IRUGO);
 module_param(area_sz, int, S_IRUGO);
 module_param(ms_period, int, S_IRUGO);
 module_param(loopback_dir, int, S_IRUGO);
@@ -121,18 +124,21 @@ static enum hrtimer_restart hrtimer_test_fn(struct hrtimer *hrtimer)
 {
 	u32 sz;
 #ifdef USE_FCRTSHOW
-	static u64 divider =0;
-	if(send_msg_flag > 0)
-	{
-		divider++;
-		if(divider == 100)
-		{
-			pr_err("#### hrtimer timeout: %d msec", divider);
-			send_msg_flag = 0;
-			divider = 0;
-			fcrtShow(0, 0, 0);
-		}
-	}
+	if(stat_tx)
+    {
+        static u64 divider = 0;
+        if (send_msg_flag > 0)
+        {
+            divider++;
+            if (divider == 100)
+            {
+                pr_err("#### hrtimer timeout: %d msec", divider);
+                send_msg_flag = 0;
+                divider = 0;
+                fcrtShow(0, 0, 0);
+            }
+        }
+    }
 #endif
 	int vc = fcrtRxReady();
 	if(vc > -1)
@@ -690,10 +696,15 @@ static int __init fcrtchr_init(void)
         return rv;
     }
 	fcrtchr_major = MAJOR(dev);
-	printk(KERN_INFO"[%s]fcrtchr_major: %x", __func__, fcrtchr_major);
-	printk(KERN_INFO"FCRTchrModule parameters were\nFCRT priv area sz: 0x%08x\nchk rx msg period: %d(msec)\ndata loopback dir: %s", area_sz, ms_period, (loopback_dir == LOOPBACK_IN_DEV) ? "loop data in device": "loop data in driver");
+    printk(KERN_INFO "[%s]fcrtchr_major: %x", __func__, fcrtchr_major);
+    printk(KERN_INFO "FCRTchrModule parameters were\nFCRT priv area sz: 0x%08x\nchk rx "
+                     "msg period: %d(msec)\ndata loopback dir: %s\nstat_tx: %d",
+           area_sz, ms_period,
+           (loopback_dir == LOOPBACK_IN_DEV) ? "loop data in device" :
+                                               "loop data in driver",
+           stat_tx);
 
-	return platform_driver_register(&fcrtchr_driver);
+    return platform_driver_register(&fcrtchr_driver);
 }
 
 
