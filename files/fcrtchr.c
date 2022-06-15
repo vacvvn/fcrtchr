@@ -99,6 +99,10 @@ struct fcrtchr_local
     struct cdev c_dev;
     struct device *dev_parent;
     struct semaphore sem;
+	struct
+	{
+		struct hrtimer tmr;
+	}rx;
 };
 
 static irqreturn_t fcrtchr_irq(int irq, void *lp)
@@ -123,6 +127,8 @@ static u32 send_msg_flag = 0;
 static enum hrtimer_restart hrtimer_test_fn(struct hrtimer *hrtimer)
 {
 	u32 sz;
+	struct fcrtchr_local * lp = container_of(hrtimer, struct fcrtchr_local, rx.tmr);
+	// printk(KERN_INFO"[%s]lp: %p; lp->dev: %p", __func__, lp, lp->dev_parent);
 #ifdef USE_FCRTSHOW
 	if(stat_tx)
     {
@@ -132,7 +138,8 @@ static enum hrtimer_restart hrtimer_test_fn(struct hrtimer *hrtimer)
             divider++;
             if (divider == 100)
             {
-                pr_err("#### hrtimer timeout: %d msec", divider);
+                dev_info(lp->dev_parent, "[%s]#### hrtimer timeout: %d msec", __func__,
+                         divider);
                 send_msg_flag = 0;
                 divider = 0;
                 fcrtShow(0, 0, 0);
@@ -165,12 +172,12 @@ static enum hrtimer_restart hrtimer_test_fn(struct hrtimer *hrtimer)
 	return HRTIMER_RESTART;
 }
  
-int rtsk_init_task(u64 nsec_period)
+int rtsk_init_task(u64 nsec_period, struct hrtimer * tmr)
 {
 	pr_err("#### hr_timer_test module init...\n");
 	
 	nsec_time = nsec_period;
-	struct hrtimer *hrtimer = &g_hrtimer0;
+	struct hrtimer *hrtimer = tmr;
 	hrtimer_init(hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
 	hrtimer->function = hrtimer_test_fn;
 	hrtimer_start(hrtimer, ns_to_ktime(nsec_period),
@@ -179,9 +186,9 @@ int rtsk_init_task(u64 nsec_period)
 	return 0;
 }
  
-void hr_timer_test_exit (void)
+void hr_timer_test_exit (struct hrtimer * tmr)
 {
-	struct hrtimer *hrtimer = &g_hrtimer0;
+	struct hrtimer *hrtimer = tmr;
 	hrtimer_cancel(hrtimer);
     pr_err("#### hr_timer_test module exit...\n");
 }
@@ -614,7 +621,7 @@ static int fcrtchr_probe(struct platform_device *pdev)
 	printk(KERN_INFO "fcrtch: major = %d minor = %d\n", fcrtchr_major, fcrtchr_minor);
 
 	dev_set_drvdata(dev, lp);
-	rtsk_init_task(ms_period * 1000 * 1000);
+	rtsk_init_task(ms_period * 1000 * 1000, &lp->rx.tmr);
     return 0;
 ///////////////////////////
 error6:
@@ -640,7 +647,7 @@ static int fcrtchr_remove(struct platform_device *pdev)
 #endif
 	struct device *dev = &pdev->dev;
 	struct fcrtchr_local *lp = dev_get_drvdata(dev);
-	hr_timer_test_exit();
+	hr_timer_test_exit(&lp->rx.tmr);
 	cdev_del(&lp->c_dev);
 	// free_irq(lp->irq, lp);
 	kfree(lp);
