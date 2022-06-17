@@ -11,7 +11,6 @@
 #define FCRT_DEF_H
 ///разрядность указателей 64 бита
 #define SYSTEM_X64
-
 ///разрядность указателей 32 бита
 // #define SYSTEM_X32
 
@@ -21,7 +20,9 @@ typedef uint32_t platform_addr_type;
 #elif defined(SYSTEM_X64)
 ///разрядность указателя
 typedef uint64_t platform_addr_type;
-#endif:/// @warning 
+#else
+#error Select platform address type
+#endif
 ////////debug///////////
 /// вариант сигнатуры fcrtInit
 #define FCRT_INIT_LONG_PARAM
