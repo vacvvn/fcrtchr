@@ -38,7 +38,7 @@
 // #define SHOW_FW_VER
 
 ///после отправки сообщения через паузу выводить статус контроллера
-#define USE_FCRTSHOW
+// #define USE_FCRTSHOW
 /* Standard module information, edit as appropriate */
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR
@@ -199,8 +199,9 @@ void hr_timer_test_exit (struct hrtimer * tmr)
 #define BBNUM_DEF		2u
 #define ASM_ID_FIRST_NUM	0x10000000u
 #define NEXT_ASM_ID(N)	(ASM_ID_FIRST_NUM + (N))
-#define FCRT_TX_FLG	0//(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
-#define FCRT_RX_FLG	0 //(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
+#define FCRT_TX_FLG	(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
+// #define FCRT_RX_FLG	(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
+#define FCRT_RX_FLG	(FCRT_FLAG_PHY_B)
 #define FCRT_TX_MSG_SZ	0x400u
 #define FCRT_RX_MSG_SZ	0x400u
 #define FCRT_PRD		0
@@ -209,11 +210,11 @@ void hr_timer_test_exit (struct hrtimer * tmr)
 #define FCRT_RX_QDEPTH  5
 /////////////////
 ///индекс вк для отправки
-#define DEF_TX_VC			0
+#define DEF_TX_VC			1
 static FCRT_TX_DESC txd[] = {
 	{.asm_id = NEXT_ASM_ID(0), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
-	// {.asm_id = NEXT_ASM_ID(1), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(1), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
 	// {.asm_id = NEXT_ASM_ID(2), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
@@ -227,7 +228,7 @@ static FCRT_TX_DESC txd[] = {
 static FCRT_RX_DESC rxd[] = {
 	{.asm_id = NEXT_ASM_ID(0), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
-	// {.asm_id = NEXT_ASM_ID(101), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(101), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
 	// {.asm_id = NEXT_ASM_ID(102), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
