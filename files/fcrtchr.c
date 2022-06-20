@@ -32,7 +32,10 @@
 #include "fcrt_define.h"
 // #include "recvtask.h"
 
+///проверка повторной загрузки драйвера из за сдвоенного узла в дереве(для ВСРВ Модуль)
 #define DEBUG_CHECK_PROBE_MODULE_CNT
+///считывать версию fw контроллера(на плате zcu102 приводит к зависанию)
+// #define SHOW_FW_VER
 
 ///после отправки сообщения через паузу выводить статус контроллера
 #define USE_FCRTSHOW
@@ -557,9 +560,11 @@ static int fcrtchr_probe(struct platform_device *pdev)
     dev_info(dev, "fcrtchr at %p mapped to %p, size=%x\n",
              lp->mem_start, lp->base_addr,
              resource_size(r_mem));
+#ifdef SHOW_FW_VER
 	u8 * tmp_ptr = lp->base_addr;
 	tmp_ptr += 0x20000;
 	dev_info(dev, "fw reg addr: %p; fw ver: 0x%08x", tmp_ptr,*((volatile u32*)tmp_ptr));
+#endif
     /* Get IRQ for the device */
     /*
     r_irq = platform_get_resource(pdev, IORESOURCE_IRQ, 0);
