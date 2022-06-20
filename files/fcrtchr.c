@@ -405,8 +405,9 @@ ssize_t fcrtchr_read(struct file *flip, char __user *buf, size_t count, loff_t *
 		goto out;
 	}
 #if 1
-	printk(KERN_ERR "[%s]Msg size: %d", __func__, msg_sz);
-	print_hex_dump(KERN_INFO, "msg: ", DUMP_PREFIX_NONE, 32, 1, buf, rv, true);
+    printk(KERN_ERR "[%s]vcd ind: %d; asm id: %x; Msg size: %d", __func__, vc,
+           rxd[vc].asm_id, msg_sz);
+    print_hex_dump(KERN_INFO, "msg: ", DUMP_PREFIX_NONE, 32, 1, buf, rv, true);
 #endif
 
 out:
@@ -414,23 +415,27 @@ out:
 	return rv;
 }
 
+#define VCD_IND_LEN 4
 ssize_t fcrtchr_write(struct file *flip, const char __user *buf, size_t count,
 					loff_t *f_pos)
 {
 	struct fcrtchr_local *dev = flip->private_data;
 	ssize_t rv = -ENOMEM;
+	u32 vcd_ind;
 
 	if (down_interruptible(&dev->sem))
 		return -ERESTARTSYS;
 
-#if 1
-	printk(KERN_ALERT "[%s]bytes to write: %lu; msg: ", __func__, count);
-	print_hex_dump(KERN_ALERT, "usr_data: ", DUMP_PREFIX_NONE, 32, 1, buf, count, true);
-#endif
 	if(count > MSG_MAX_LEN)
 	{
 		printk(KERN_ERR"[%s]Message max size is: %d", __func__, MSG_MAX_LEN);
 		rv = -ENOMEM;
+		goto out;
+	}
+	if(count <= VCD_IND_LEN)
+	{
+		printk(KERN_ERR"[%s]Msg format: <vcd_ind(4decimal digigs)>[msg body]", __func__ );
+		rv = -EFAULT;
 		goto out;
 	}
 	if(copy_from_user(sndBuf, buf, count) != 0)
@@ -439,12 +444,28 @@ ssize_t fcrtchr_write(struct file *flip, const char __user *buf, size_t count,
 		rv = -EFAULT;
 		goto out;
 	}
-	if(fcrtSend(DEF_TX_VC, (void*)sndBuf, (unsigned int)count) != 0)
+    vcd_ind = ((sndBuf[0] - 0x30) * 1000) + ((sndBuf[1] - 0x30) * 100) +
+              ((sndBuf[2] - 0x30) * 10) + ((sndBuf[3] - 0x30) * 1);
+	if(vcd_ind > (sizeof(txd) / sizeof(txd[0])))
 	{
+		printk(KERN_ERR"[%s]Invalid vcd index: %d", __func__, vcd_ind);
+		rv = -EFAULT;
+		goto out;
+	}
+#if 1
+    printk(KERN_ALERT "[%s]vcd ind: %d; bytes to write: %lu; msg: ", __func__, vcd_ind,
+           count - VCD_IND_LEN);
+    printk(KERN_ALERT"[%s]VCind: %d; asm_id: %x", __func__, vcd_ind, txd[vcd_ind].asm_id);
+	print_hex_dump(KERN_ALERT, "usr_data: ", DUMP_PREFIX_NONE, 32, 1, buf, count, true);
+#endif
+    if (fcrtSend(vcd_ind, (void *)&sndBuf[VCD_IND_LEN],
+                 (unsigned int)(count - VCD_IND_LEN)) != 0)
+    {
 		printk(KERN_ALERT"[%s]fcrtSend fails. VC[%d]", __func__, txd[0].asm_id);
 		rv = -ENOMEM;
 		goto out;
 	}
+
 	rv = count;
 	send_msg_flag = 1;
 
