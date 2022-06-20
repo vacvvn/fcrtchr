@@ -216,25 +216,25 @@ static FCRT_TX_DESC txd[] = {
 
 	{.asm_id = NEXT_ASM_ID(1), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
-	// {.asm_id = NEXT_ASM_ID(2), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(2), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
-	// {.asm_id = NEXT_ASM_ID(3), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(3), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
-	// {.asm_id = NEXT_ASM_ID(4), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(4), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 };
 
 ///индекс вк для приема
 #define DEF_RX_VC			0
 static FCRT_RX_DESC rxd[] = {
-	{.asm_id = NEXT_ASM_ID(0), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(100), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
 	{.asm_id = NEXT_ASM_ID(101), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
-	// {.asm_id = NEXT_ASM_ID(102), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(102), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
-	// {.asm_id = NEXT_ASM_ID(103), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(103), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
-	// {.asm_id = NEXT_ASM_ID(104), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(104), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 };
 
 static FCRT_CTRL_CFG cfg = {
