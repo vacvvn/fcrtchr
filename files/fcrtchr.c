@@ -38,7 +38,7 @@
 // #define SHOW_FW_VER
 
 ///после отправки сообщения через паузу выводить статус контроллера
-// #define USE_FCRTSHOW
+#define USE_FCRTSHOW
 /* Standard module information, edit as appropriate */
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR
@@ -145,7 +145,9 @@ static enum hrtimer_restart hrtimer_test_fn(struct hrtimer *hrtimer)
                          divider);
                 send_msg_flag = 0;
                 divider = 0;
+				printk(KERN_ALERT"[%s]fcrt Status", __func__);
                 fcrtShow(0, 0, 0);
+				printk(KERN_ALERT"----------------------------------");
             }
         }
     }
@@ -201,13 +203,13 @@ void hr_timer_test_exit (struct hrtimer * tmr)
 #define NEXT_ASM_ID(N)	(ASM_ID_FIRST_NUM + (N))
 #define FCRT_TX_FLG	(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
 // #define FCRT_RX_FLG	(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
-#define FCRT_RX_FLG	(FCRT_FLAG_PHY_B)
+#define FCRT_RX_FLG	(FCRT_FLAG_PHY_A | FCRT_FLAG_PHY_B)
 #define FCRT_TX_MSG_SZ	0x400u
 #define FCRT_RX_MSG_SZ	0x400u
 #define FCRT_PRD		0
 #define FCRT_PRIO		0
-#define FCRT_TX_QDEPTH  5
-#define FCRT_RX_QDEPTH  5
+#define FCRT_TX_QDEPTH  4
+#define FCRT_RX_QDEPTH  4
 /////////////////
 ///индекс вк для отправки
 #define DEF_TX_VC			1
@@ -221,20 +223,24 @@ static FCRT_TX_DESC txd[] = {
 	{.asm_id = NEXT_ASM_ID(3), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 
 	{.asm_id = NEXT_ASM_ID(4), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
+
+	{.asm_id = NEXT_ASM_ID(5), .dst_id = DST_ID_DEFAULT, .flags = FCRT_TX_FLG, .max_size = FCRT_TX_MSG_SZ, .period = FCRT_PRD, .priority = FCRT_PRIO, .q_depth = FCRT_TX_QDEPTH},
 };
 
 ///индекс вк для приема
 #define DEF_RX_VC			0
 static FCRT_RX_DESC rxd[] = {
-	{.asm_id = NEXT_ASM_ID(100), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(0), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
-	{.asm_id = NEXT_ASM_ID(101), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+	{.asm_id = NEXT_ASM_ID(1), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
 	{.asm_id = NEXT_ASM_ID(102), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
 	{.asm_id = NEXT_ASM_ID(103), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 
 	{.asm_id = NEXT_ASM_ID(104), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
+
+	{.asm_id = NEXT_ASM_ID(105), .flags = FCRT_RX_FLG, .max_size = FCRT_RX_MSG_SZ, .q_depth = FCRT_RX_QDEPTH},
 };
 
 static FCRT_CTRL_CFG cfg = {
@@ -425,6 +431,10 @@ ssize_t fcrtchr_write(struct file *flip, const char __user *buf, size_t count,
 
 	if (down_interruptible(&dev->sem))
 		return -ERESTARTSYS;
+	
+	printk(KERN_ALERT"[%s]fcrtStatus before message sending", __func__);
+	fcrtShow(0, 0, 0);
+	printk(KERN_ALERT"----------------------------------");
 
 	if(count > MSG_MAX_LEN)
 	{
@@ -638,6 +648,9 @@ static int fcrtchr_probe(struct platform_device *pdev)
 	printk(KERN_INFO"1");
 	fcrt_conf_out(dev, &param);
 	dev_info(dev, "[%s]Try to init FCRT dev", __func__);
+	dev_info(dev, "fcrtStatus before init");
+	fcrtShow(0, 0, 0);
+	printk(KERN_ALERT"----------------------------------");
 #ifdef FCRT_INIT_LONG_PARAM
 	rc = fcrtInit(lp->base_addr, &cfg, txd, rxd, param.nVC, param.fcrt_alloc);
 #else
